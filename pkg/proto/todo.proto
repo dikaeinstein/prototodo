@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package todo;
+
+import "google/protobuf/timestamp.proto";
+
+message ToDo {
+    int64 id = 1;
+    string title = 2;
+    string description = 3;
+    google.protobuf.Timestamp reminder = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+	google.protobuf.Timestamp deleted_at = 7;
+}
+
+message CreateRequest {
+    ToDo todo = 1;
+}
+
+message CreateResponse {
+    ToDo todo = 1;
+}
+
+message ReadRequest {
+    int64 id = 1;
+}
+
+message ReadResponse {
+    ToDo todo = 1;
+}
+
+message UpdateRequest {
+    ToDo todo = 1;
+}
+
+message UpdateResponse {
+    ToDo updated = 1;
+}
+
+message DeleteRequest {
+    int64 id = 1;
+}
+
+message DeleteResponse {
+    // Contains number of entities have beed deleted
+    int64 deleted = 1;
+}
+
+message ReadAllRequest {}
+
+message ReadAllResponse {
+    repeated ToDo todos = 1;
+}
+
+service ToDoService {
+    rpc CreateToDo (CreateRequest) returns (CreateResponse);
+    rpc DeleteToDo (DeleteRequest) returns (DeleteResponse);
+    rpc ReadToDo (ReadRequest) returns (ReadResponse);
+    rpc ReadAllToDos (ReadAllRequest) returns (ReadAllResponse);
+    rpc UpdateToDo (UpdateRequest) returns (UpdateResponse);
+}
