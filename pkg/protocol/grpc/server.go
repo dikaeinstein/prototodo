@@ -143,7 +143,8 @@ func (h *toDoHandler) UpdateToDo(ctx context.Context, req *pb.UpdateRequest) (*p
 	return &pb.UpdateResponse{Updated: tProto}, nil
 }
 
-// NewGRPCToDoServiceServer creates a new todo gRPC server
+// NewGRPCToDoServiceServer creates a new todoService gRPC server
+// which implements the pb.ToDoServiceServer interface
 func NewGRPCToDoServiceServer(s todo.Service) pb.ToDoServiceServer {
 	return &toDoHandler{s}
 }

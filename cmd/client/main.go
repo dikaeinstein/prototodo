@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"google.golang.org/grpc/credentials"
 
+	"github.com/dikaeinstein/prototodo/pkg/config"
 	pb "github.com/dikaeinstein/prototodo/pkg/proto"
 	"github.com/golang/protobuf/ptypes"
-
 	"google.golang.org/grpc"
 )
 
@@ -77,12 +78,19 @@ func deleteToDo(client pb.ToDoServiceClient, todoID int64) {
 }
 
 func main() {
-	creds, err := credentials.NewClientTLSFromFile("/Users/Dikaeinstein/Library/Application Support/mkcert/rootCA.pem", "")
+	cfg := config.New()
+	creds, err := credentials.NewClientTLSFromFile(cfg.RootCert, "")
 	if err != nil {
 		log.Fatalf("failed to load credentials: %v", err)
 	}
 
-	conn, err := grpc.Dial("localhost:8000", grpc.WithTransportCredentials(creds))
+	addr := fmt.Sprintf("localhost:%d", cfg.Port)
+	var conn *grpc.ClientConn
+	if cfg.TLS {
+		conn, err = grpc.Dial(addr, grpc.WithTransportCredentials(creds))
+	} else {
+		conn, err = grpc.Dial(addr, grpc.WithInsecure())
+	}
 	if err != nil {
 		log.Fatalf("failed to dial: %v", err)
 	}

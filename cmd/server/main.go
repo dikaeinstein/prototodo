@@ -6,11 +6,6 @@ import (
 	"net"
 
 	"github.com/dikaeinstein/prototodo/pkg/config"
-
-	"go.uber.org/zap"
-
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-
 	"github.com/dikaeinstein/prototodo/pkg/logger"
 	pb "github.com/dikaeinstein/prototodo/pkg/proto"
 	g "github.com/dikaeinstein/prototodo/pkg/protocol/grpc"
@@ -18,8 +13,10 @@ import (
 	"github.com/dikaeinstein/prototodo/pkg/todo"
 	"github.com/dikaeinstein/prototodo/pkg/todo/service"
 	"github.com/dikaeinstein/prototodo/pkg/todo/storage"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -34,29 +31,15 @@ func connectToDatabase(dbURI string, l *zap.Logger) *gorm.DB {
 	return db
 }
 
-func getCertFile(cfg config.Config, certFileFlag string) string {
-	if certFileFlag != "" {
-		return certFileFlag
-	}
-	return cfg.CertFile
-}
-
-func getKeyFile(cfg config.Config, keyFileFlag string) string {
-	if keyFileFlag != "" {
-		return keyFileFlag
-	}
-	return cfg.KeyFile
-}
-
 func main() {
 	cfg := config.New()
-	flag.BoolVar(&cfg.TLS, "tls", false, "Connection uses TLS if true, else plain TCP")
-	flag.StringVar(&cfg.DBName, "db_name", "prototodos", "The database name")
-	flag.IntVar(&cfg.Port, "port", 10000, "The server port")
-	flag.StringVar(&cfg.AppEnv, "app_env", "development", "The app environment")
-	flag.IntVar(&cfg.LogLevel, "log_level", 0, "Global log level")
-	certFileFlag := flag.String("cert_file", "", "The TLS cert file")
-	keyFileFlag := flag.String("key_file", "", "The TLS key file")
+	flag.BoolVar(&cfg.TLS, "tls", cfg.TLS, "Connection uses TLS if true, else plain TCP")
+	flag.StringVar(&cfg.DBName, "db_name", cfg.DBName, "The database name")
+	flag.IntVar(&cfg.Port, "port", cfg.Port, "The server port")
+	flag.StringVar(&cfg.AppEnv, "app_env", cfg.AppEnv, "The app environment")
+	flag.IntVar(&cfg.LogLevel, "log_level", cfg.LogLevel, "Global log level")
+	flag.StringVar(&cfg.CertFile, "cert_file", cfg.CertFile, "The TLS cert file")
+	flag.StringVar(&cfg.KeyFile, "key_file", cfg.KeyFile, "The TLS key file")
 
 	flag.Parse()
 
@@ -78,10 +61,7 @@ func main() {
 
 	var opts []grpc.ServerOption
 	if cfg.TLS {
-		cFile := getCertFile(cfg, *certFileFlag)
-		kFile := getKeyFile(cfg, *keyFileFlag)
-
-		creds, err := credentials.NewServerTLSFromFile(cFile, kFile)
+		creds, err := credentials.NewServerTLSFromFile(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
 			zapLogger.Fatal("Failed to generate credentials", zap.Error(err))
 		}
@@ -95,8 +75,10 @@ func main() {
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterToDoServiceServer(grpcServer, srv)
 
-	zapLogger.Info("Starting gRPC server ...")
+	msg := fmt.Sprintf("gRPC server listening on %d...", cfg.Port)
+	zapLogger.Info(msg)
 	if err := grpcServer.Serve(lis); err != nil {
 		zapLogger.Fatal("failed to serve", zap.Error(err))
 	}
+	grpcServer.GracefulStop()
 }

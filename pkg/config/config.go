@@ -17,6 +17,7 @@ type Config struct {
 	KeyFile  string
 	CertFile string
 	LogLevel int
+	RootCert string
 }
 
 // New creates an instance of config.
@@ -34,6 +35,7 @@ func New() Config {
 		CertFile: getEnv("CERT_FILE", ""),
 		Port:     getEnvAsInt("PORT", 10000),
 		LogLevel: getEnvAsInt("LOG_LEVEL", 0),
+		RootCert: getEnv("ROOT_CERT", ""),
 	}
 }
 
