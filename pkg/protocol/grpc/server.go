@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	pb "github.com/dikaeinstein/prototodo/pkg/proto"
+	"github.com/dikaeinstein/prototodo/pkg/todo"
 	"github.com/dikaeinstein/prototodo/pkg/todo/storage"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-
-	"github.com/dikaeinstein/prototodo/pkg/todo"
-
-	pb "github.com/dikaeinstein/prototodo/pkg/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (

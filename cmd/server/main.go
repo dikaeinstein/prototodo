@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"google.golang.org/grpc/health/grpc_health_v1"
-
 	"github.com/dikaeinstein/prototodo/pkg/config"
 	"github.com/dikaeinstein/prototodo/pkg/logger"
 	pb "github.com/dikaeinstein/prototodo/pkg/proto"
@@ -22,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func connectToDatabase(dbURI string, l *zap.Logger) *gorm.DB {

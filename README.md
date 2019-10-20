@@ -2,6 +2,11 @@
 
 My first shot at gRPC with golang
 
+Features:
+
+* Health check
+* Graceful shutdown
+
 ## Run Locally
 
 Prerequisites:
