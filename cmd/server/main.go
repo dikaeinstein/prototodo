@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 
+	"google.golang.org/grpc/health/grpc_health_v1"
+
 	"github.com/dikaeinstein/prototodo/pkg/config"
 	"github.com/dikaeinstein/prototodo/pkg/logger"
 	pb "github.com/dikaeinstein/prototodo/pkg/proto"
@@ -19,6 +21,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/health"
 )
 
 func connectToDatabase(dbURI string, l *zap.Logger) *gorm.DB {
@@ -74,11 +77,16 @@ func main() {
 
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterToDoServiceServer(grpcServer, srv)
+	h := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, h)
+	h.SetServingStatus("todoService", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	msg := fmt.Sprintf("gRPC server listening on %d...", cfg.Port)
 	zapLogger.Info(msg)
 	if err := grpcServer.Serve(lis); err != nil {
 		zapLogger.Fatal("failed to serve", zap.Error(err))
 	}
+
+	h.SetServingStatus("todoService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	grpcServer.GracefulStop()
 }

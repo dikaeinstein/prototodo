@@ -6,12 +6,14 @@ import (
 	"log"
 	"time"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/dikaeinstein/prototodo/pkg/config"
 	pb "github.com/dikaeinstein/prototodo/pkg/proto"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 )
 
 var defaultTimeout = 5 * time.Second
@@ -96,6 +98,7 @@ func main() {
 	}
 	defer conn.Close()
 
+	healthClient := grpc_health_v1.NewHealthClient(conn)
 	client := pb.NewToDoServiceClient(conn)
 
 	reminder := time.Now().Add(5 * time.Second).In(time.UTC)
@@ -105,10 +108,26 @@ func main() {
 		Description: "Another first here.",
 		Reminder:    reminderProto,
 	}
+
+	checkHealth(healthClient)
 	newToDo := createToDo(client, t)
 	readToDo(client, newToDo.Id)
 	readAllToDos(client)
 	payload := &pb.ToDo{Id: newToDo.Id, Title: "My updated grpc todo item"}
 	updateToDo(client, payload)
 	deleteToDo(client, newToDo.Id)
+	checkHealth(healthClient)
+}
+
+func checkHealth(c grpc_health_v1.HealthClient) {
+	resp, err := c.Check(context.TODO(),
+		&grpc_health_v1.HealthCheckRequest{Service: "todoService"})
+	if err != nil {
+		if s, ok := status.FromError(err); ok && s.Code() == codes.Unimplemented {
+			log.Println("the server doesn't implement the grpc health protocol")
+		} else {
+			log.Printf("gRPC health check failed: %v", err)
+		}
+	}
+	log.Printf("Health status: %s", resp.GetStatus().String())
 }
