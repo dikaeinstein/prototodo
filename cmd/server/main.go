@@ -29,7 +29,7 @@ func connectToDatabase(dbURI string, l *zap.Logger) *gorm.DB {
 	if err != nil {
 		l.Fatal("failed to open database connection", zap.Error(err))
 	}
-	db.Debug().AutoMigrate(&todo.ToDo{})
+	db.Debug().AutoMigrate(&todo.Todo{})
 
 	return db
 }
@@ -60,7 +60,7 @@ func main() {
 
 	r := storage.NewPostgresStore(db)
 	s := service.New(r)
-	srv := g.NewGRPCToDoServiceServer(s)
+	srv := g.NewGRPCTodoHandler(s)
 
 	var opts []grpc.ServerOption
 	if cfg.TLS {
@@ -76,10 +76,10 @@ func main() {
 	))
 
 	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterToDoServiceServer(grpcServer, srv)
+	pb.RegisterTodoServiceServer(grpcServer, srv)
 	h := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, h)
-	h.SetServingStatus("todoService", grpc_health_v1.HealthCheckResponse_SERVING)
+	h.SetServingStatus("TodoService", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	msg := fmt.Sprintf("gRPC server listening on %d...", cfg.Port)
 	zapLogger.Info(msg)
@@ -87,6 +87,6 @@ func main() {
 		zapLogger.Fatal("failed to serve", zap.Error(err))
 	}
 
-	h.SetServingStatus("todoService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	h.SetServingStatus("TodoService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	grpcServer.GracefulStop()
 }

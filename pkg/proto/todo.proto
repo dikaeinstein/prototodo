@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package todo;
+package todo.v1;
 
 import "google/protobuf/timestamp.proto";
 
-message ToDo {
+message Todo {
     int64 id = 1;
     string title = 2;
     string description = 3;
@@ -15,11 +15,11 @@ message ToDo {
 }
 
 message CreateRequest {
-    ToDo todo = 1;
+    Todo todo = 1;
 }
 
 message CreateResponse {
-    ToDo todo = 1;
+    Todo todo = 1;
 }
 
 message ReadRequest {
@@ -27,15 +27,15 @@ message ReadRequest {
 }
 
 message ReadResponse {
-    ToDo todo = 1;
+    Todo todo = 1;
 }
 
 message UpdateRequest {
-    ToDo todo = 1;
+    Todo todo = 1;
 }
 
 message UpdateResponse {
-    ToDo updated = 1;
+    Todo updated = 1;
 }
 
 message DeleteRequest {
@@ -50,13 +50,13 @@ message DeleteResponse {
 message ReadAllRequest {}
 
 message ReadAllResponse {
-    repeated ToDo todos = 1;
+    repeated Todo todos = 1;
 }
 
-service ToDoService {
-    rpc CreateToDo (CreateRequest) returns (CreateResponse);
-    rpc DeleteToDo (DeleteRequest) returns (DeleteResponse);
-    rpc ReadToDo (ReadRequest) returns (ReadResponse);
-    rpc ReadAllToDos (ReadAllRequest) returns (ReadAllResponse);
-    rpc UpdateToDo (UpdateRequest) returns (UpdateResponse);
+service TodoService {
+    rpc Create (CreateRequest) returns (CreateResponse);
+    rpc Delete (DeleteRequest) returns (DeleteResponse);
+    rpc Read (ReadRequest) returns (ReadResponse);
+    rpc ReadAll (ReadAllRequest) returns (ReadAllResponse);
+    rpc Update (UpdateRequest) returns (UpdateResponse);
 }

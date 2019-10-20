@@ -23,19 +23,19 @@ func NewPostgresStore(db *gorm.DB) *PostgresStore {
 }
 
 // GetAll fetches all todo items from postgres data store.
-func (p *PostgresStore) GetAll(ctx context.Context) (chan todo.ToDo, error) {
-	rows, err := p.DB.Model(&todo.ToDo{}).Select("*").Rows()
+func (p *PostgresStore) GetAll(ctx context.Context) (chan todo.Todo, error) {
+	rows, err := p.DB.Model(&todo.Todo{}).Select("*").Rows()
 	if err != nil {
 		return nil, err
 	}
 
-	c := make(chan todo.ToDo)
+	c := make(chan todo.Todo)
 
 	go func() {
 		defer rows.Close()
 		defer close(c)
 		for rows.Next() {
-			var t todo.ToDo
+			var t todo.Todo
 			p.DB.ScanRows(rows, &t)
 			select {
 			case <-ctx.Done():
@@ -51,8 +51,8 @@ func (p *PostgresStore) GetAll(ctx context.Context) (chan todo.ToDo, error) {
 }
 
 // GetByID fetches one todo item from the postgres data store using its id.
-func (p *PostgresStore) GetByID(ctx context.Context, id uint) (todo.ToDo, error) {
-	var t todo.ToDo
+func (p *PostgresStore) GetByID(ctx context.Context, id uint) (todo.Todo, error) {
+	var t todo.Todo
 	if err := p.DB.First(&t, id).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return t, ErrNotFound
@@ -64,7 +64,7 @@ func (p *PostgresStore) GetByID(ctx context.Context, id uint) (todo.ToDo, error)
 }
 
 // Create saves the todo into the postgres data store.
-func (p *PostgresStore) Create(ctx context.Context, t todo.ToDo) (todo.ToDo, error) {
+func (p *PostgresStore) Create(ctx context.Context, t todo.Todo) (todo.Todo, error) {
 	if err := p.DB.Create(&t).Error; err != nil {
 		return t, err
 	}
@@ -74,7 +74,7 @@ func (p *PostgresStore) Create(ctx context.Context, t todo.ToDo) (todo.ToDo, err
 
 // Delete removes a todo item from the postgres data store.
 func (p *PostgresStore) Delete(ctx context.Context, id uint) (uint, error) {
-	var t todo.ToDo
+	var t todo.Todo
 	if err := p.DB.First(&t, id).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return id, ErrNotFound
@@ -90,8 +90,8 @@ func (p *PostgresStore) Delete(ctx context.Context, id uint) (uint, error) {
 }
 
 // Update updates a todo item with attrs in the postgres data store
-func (p *PostgresStore) Update(ctx context.Context, todoID uint, attrs todo.ToDo) (todo.ToDo, error) {
-	var t todo.ToDo
+func (p *PostgresStore) Update(ctx context.Context, todoID uint, attrs todo.Todo) (todo.Todo, error) {
+	var t todo.Todo
 	if err := p.DB.First(&t, todoID).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return t, ErrNotFound

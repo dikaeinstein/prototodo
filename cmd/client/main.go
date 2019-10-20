@@ -18,65 +18,65 @@ import (
 
 var defaultTimeout = 5 * time.Second
 
-func createToDo(client pb.ToDoServiceClient, t pb.ToDo) pb.ToDo {
+func createTodo(client pb.TodoServiceClient, t pb.Todo) pb.Todo {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.CreateToDo(ctx, &pb.CreateRequest{Todo: &t})
+	resp, err := client.Create(ctx, &pb.CreateRequest{Todo: &t})
 	if err != nil {
-		log.Fatalf("%v.CreateToDo(_) = _, %v: ", client, err)
+		log.Fatalf("%v.Create(_) = _, %v: ", client, err)
 	}
 
-	log.Println("CreateToDo result: ", resp.GetTodo())
+	log.Println("Create result: ", resp.GetTodo())
 	return *resp.Todo
 }
 
-func readToDo(client pb.ToDoServiceClient, id int64) {
+func readTodo(client pb.TodoServiceClient, id int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.ReadToDo(ctx, &pb.ReadRequest{Id: id})
+	resp, err := client.Read(ctx, &pb.ReadRequest{Id: id})
 	if err != nil {
-		log.Fatalf("%v.ReadToDo(_) = _, %v: ", client, err)
+		log.Fatalf("%v.Read(_) = _, %v: ", client, err)
 	}
 
-	log.Println("ReadToDo result: ", resp.GetTodo())
+	log.Println("Read result: ", resp.GetTodo())
 }
 
-func readAllToDos(client pb.ToDoServiceClient) {
+func readAllTodos(client pb.TodoServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.ReadAllToDos(ctx, &pb.ReadAllRequest{})
+	resp, err := client.ReadAll(ctx, &pb.ReadAllRequest{})
 	if err != nil {
-		log.Fatalf("%v.ReadAllToDos(_) = _, %v: ", client, err)
+		log.Fatalf("%v.ReadAll(_) = _, %v: ", client, err)
 	}
 
-	log.Println("ReadAllToDos result: ", resp.GetTodos())
+	log.Println("ReadAll result: ", resp.GetTodos())
 }
 
-func updateToDo(client pb.ToDoServiceClient, payload *pb.ToDo) {
+func updateTodo(client pb.TodoServiceClient, payload *pb.Todo) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.UpdateToDo(ctx, &pb.UpdateRequest{Todo: payload})
+	resp, err := client.Update(ctx, &pb.UpdateRequest{Todo: payload})
 	if err != nil {
-		log.Fatalf("%v.UpdateToDo(_) = _, %v: ", client, err)
+		log.Fatalf("%v.Update(_) = _, %v: ", client, err)
 	}
 
-	log.Println("UpdateToDo result: ", resp.GetUpdated())
+	log.Println("Update result: ", resp.GetUpdated())
 }
 
-func deleteToDo(client pb.ToDoServiceClient, todoID int64) {
+func deleteTodo(client pb.TodoServiceClient, todoID int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.DeleteToDo(ctx, &pb.DeleteRequest{Id: todoID})
+	resp, err := client.Delete(ctx, &pb.DeleteRequest{Id: todoID})
 	if err != nil {
-		log.Fatalf("%v.DeleteToDo(_) = _, %v: ", client, err)
+		log.Fatalf("%v.Delete(_) = _, %v: ", client, err)
 	}
 
-	log.Println("DeleteToDo result: ", resp.GetDeleted())
+	log.Println("Delete result: ", resp.GetDeleted())
 }
 
 func main() {
@@ -99,29 +99,29 @@ func main() {
 	defer conn.Close()
 
 	healthClient := grpc_health_v1.NewHealthClient(conn)
-	client := pb.NewToDoServiceClient(conn)
+	client := pb.NewTodoServiceClient(conn)
 
 	reminder := time.Now().Add(5 * time.Second).In(time.UTC)
 	reminderProto, _ := ptypes.TimestampProto(reminder)
-	t := pb.ToDo{
+	t := pb.Todo{
 		Title:       "My first grpc todo item",
 		Description: "Another first here.",
 		Reminder:    reminderProto,
 	}
 
 	checkHealth(healthClient)
-	newToDo := createToDo(client, t)
-	readToDo(client, newToDo.Id)
-	readAllToDos(client)
-	payload := &pb.ToDo{Id: newToDo.Id, Title: "My updated grpc todo item"}
-	updateToDo(client, payload)
-	deleteToDo(client, newToDo.Id)
+	newTodo := createTodo(client, t)
+	readTodo(client, newTodo.Id)
+	readAllTodos(client)
+	payload := &pb.Todo{Id: newTodo.Id, Title: "My updated grpc todo item"}
+	updateTodo(client, payload)
+	deleteTodo(client, newTodo.Id)
 	checkHealth(healthClient)
 }
 
 func checkHealth(c grpc_health_v1.HealthClient) {
 	resp, err := c.Check(context.TODO(),
-		&grpc_health_v1.HealthCheckRequest{Service: "todoService"})
+		&grpc_health_v1.HealthCheckRequest{Service: "TodoService"})
 	if err != nil {
 		if s, ok := status.FromError(err); ok && s.Code() == codes.Unimplemented {
 			log.Println("the server doesn't implement the grpc health protocol")

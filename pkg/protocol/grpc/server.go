@@ -21,12 +21,18 @@ var (
 	errClientCancelled = status.Error(codes.Canceled, "Client cancelled, abandoning.")
 )
 
-type toDoHandler struct {
+type todoHandler struct {
 	service todo.Service
 }
 
-func (h *toDoHandler) CreateToDo(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
-	t, err := makeToDo(req.Todo)
+// NewGRPCTodoHandler creates a new todoHandler
+// which implements the pb.TodoServiceServer interface
+func NewGRPCTodoHandler(s todo.Service) pb.TodoServiceServer {
+	return &todoHandler{s}
+}
+
+func (h *todoHandler) Create(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
+	t, err := makeTodo(req.Todo)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +42,13 @@ func (h *toDoHandler) CreateToDo(ctx context.Context, req *pb.CreateRequest) (*p
 		return nil, errClientCancelled
 	}
 
-	newToDo, err := h.service.Create(ctx, *t)
+	newTodo, err := h.service.Create(ctx, *t)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"failed to create todo: %v", err)
 	}
 
-	tProto, err := makeToDoProto(newToDo)
+	tProto, err := makeTodoProto(newTodo)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +56,7 @@ func (h *toDoHandler) CreateToDo(ctx context.Context, req *pb.CreateRequest) (*p
 	return &pb.CreateResponse{Todo: tProto}, nil
 }
 
-func (h *toDoHandler) DeleteToDo(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+func (h *todoHandler) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
 	// Check that there's still a client waiting for the response.
 	if ctx.Err() == context.Canceled {
 		return nil, errClientCancelled
@@ -68,7 +74,7 @@ func (h *toDoHandler) DeleteToDo(ctx context.Context, req *pb.DeleteRequest) (*p
 	return &pb.DeleteResponse{Deleted: int64(id)}, nil
 }
 
-func (h *toDoHandler) ReadToDo(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
+func (h *todoHandler) Read(ctx context.Context, req *pb.ReadRequest) (*pb.ReadResponse, error) {
 	// Check that there's still a client waiting for the response.
 	if ctx.Err() == context.Canceled {
 		return nil, errClientCancelled
@@ -83,7 +89,7 @@ func (h *toDoHandler) ReadToDo(ctx context.Context, req *pb.ReadRequest) (*pb.Re
 			"Failed to fetch todo item: %v", err)
 	}
 
-	tProto, err := makeToDoProto(t)
+	tProto, err := makeTodoProto(t)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +97,7 @@ func (h *toDoHandler) ReadToDo(ctx context.Context, req *pb.ReadRequest) (*pb.Re
 	return &pb.ReadResponse{Todo: tProto}, nil
 }
 
-func (h *toDoHandler) ReadAllToDos(ctx context.Context, req *pb.ReadAllRequest) (*pb.ReadAllResponse, error) {
+func (h *todoHandler) ReadAll(ctx context.Context, req *pb.ReadAllRequest) (*pb.ReadAllResponse, error) {
 	// Check that there's still a client waiting for the response.
 	if ctx.Err() == context.Canceled {
 		return nil, errClientCancelled
@@ -106,10 +112,10 @@ func (h *toDoHandler) ReadAllToDos(ctx context.Context, req *pb.ReadAllRequest) 
 			"Failed to fetch todo items: %v", err)
 	}
 
-	ttProto := make([]*pb.ToDo, 0)
+	ttProto := make([]*pb.Todo, 0)
 
 	for t := range ch {
-		tProto, err := makeToDoProto(t)
+		tProto, err := makeTodoProto(t)
 		if err != nil {
 			return nil, err
 		}
@@ -119,8 +125,8 @@ func (h *toDoHandler) ReadAllToDos(ctx context.Context, req *pb.ReadAllRequest) 
 	return &pb.ReadAllResponse{Todos: ttProto}, err
 }
 
-func (h *toDoHandler) UpdateToDo(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
-	t, err := makeToDo(req.Todo)
+func (h *todoHandler) Update(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
+	t, err := makeTodo(req.Todo)
 	if err != nil {
 		return nil, err
 	}
@@ -139,14 +145,8 @@ func (h *toDoHandler) UpdateToDo(ctx context.Context, req *pb.UpdateRequest) (*p
 			"Failed to update todo item: %v", err)
 	}
 
-	tProto, err := makeToDoProto(updated)
+	tProto, err := makeTodoProto(updated)
 	return &pb.UpdateResponse{Updated: tProto}, nil
-}
-
-// NewGRPCToDoServiceServer creates a new todoService gRPC server
-// which implements the pb.ToDoServiceServer interface
-func NewGRPCToDoServiceServer(s todo.Service) pb.ToDoServiceServer {
-	return &toDoHandler{s}
 }
 
 func makeParseTimeStampErrorMsg(field string, err error) string {
@@ -154,7 +154,7 @@ func makeParseTimeStampErrorMsg(field string, err error) string {
 		"Resulting Timestamp is invalid: %v", field, err)
 }
 
-func makeToDoProto(t todo.ToDo) (*pb.ToDo, error) {
+func makeTodoProto(t todo.Todo) (*pb.Todo, error) {
 	var deletedAtProto *tspb.Timestamp
 	if t.DeletedAt != nil {
 		var err error
@@ -181,7 +181,7 @@ func makeToDoProto(t todo.ToDo) (*pb.ToDo, error) {
 			makeParseTimeStampErrorMsg("UpdatedAt", err))
 	}
 
-	return &pb.ToDo{
+	return &pb.Todo{
 		Id:          int64(t.ID),
 		Description: t.Description,
 		Title:       t.Title,
@@ -192,8 +192,8 @@ func makeToDoProto(t todo.ToDo) (*pb.ToDo, error) {
 	}, nil
 }
 
-func makeToDo(tProto *pb.ToDo) (*todo.ToDo, error) {
-	var t todo.ToDo
+func makeTodo(tProto *pb.Todo) (*todo.Todo, error) {
+	var t todo.Todo
 	r := tProto.GetReminder()
 	if r != nil {
 		reminder, err := ptypes.Timestamp(r)
