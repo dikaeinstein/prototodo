@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/dikaeinstein/prototodo/pkg/protocol/grpc"
 	"github.com/dikaeinstein/prototodo/pkg/todo"
 )
 
@@ -16,7 +17,8 @@ type Repository interface {
 }
 
 // New creates a todo service with the necessary dependencies.
-func New(r Repository) todo.Service {
+// This contains the core business logic to operate on todo items.
+func New(r Repository) grpc.Service {
 	return &service{r}
 }
 

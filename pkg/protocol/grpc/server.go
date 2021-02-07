@@ -17,13 +17,22 @@ var (
 	errClientCancelled = status.Error(codes.Canceled, "Client cancelled, abandoning.")
 )
 
+// Service provides an interface to operate on Todo items.
+type Service interface {
+	Create(ctx context.Context, t todo.Todo) (todo.Todo, error)
+	Delete(ctx context.Context, id uint) (uint, error)
+	Read(ctx context.Context, id uint) (todo.Todo, error)
+	ReadAll(ctx context.Context) (chan todo.Todo, error)
+	Update(ctx context.Context, todoID uint, t todo.Todo) (todo.Todo, error)
+}
+
 type todoHandler struct {
-	service todo.Service
+	service Service
 }
 
 // NewGRPCTodoHandler creates a new todoHandler
 // which implements the pb.TodoServiceServer interface
-func NewGRPCTodoHandler(s todo.Service) pb.TodoServiceServer {
+func NewGRPCTodoHandler(s Service) pb.TodoServiceServer {
 	return &todoHandler{s}
 }
 
